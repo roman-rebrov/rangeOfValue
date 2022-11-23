@@ -1,14 +1,13 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 
 public class Main {
 
 
-    private static List<FutureTask<Integer>> threadList = new ArrayList<>();
+    private static List<Future<Integer>> threadList = new ArrayList<>();
+    private static ExecutorService threadPool = Executors.newFixedThreadPool(25);
 
 
     private static Callable<Integer> getThread(String text) {
@@ -53,16 +52,14 @@ public class Main {
         String[] texts = new String[25];
         for (int i = 0; i < texts.length; i++) {
             texts[i] = generateText("aab", 30_000);
-            final FutureTask<Integer> integerFutureTask = new FutureTask<>(getThread(texts[i]));
-            final Thread thread = new Thread(integerFutureTask);
-            thread.start();
+            final Future<Integer> integerFutureTask = threadPool.submit(getThread(texts[i]));
             threadList.add(integerFutureTask);
         }
 
         long startTs = System.currentTimeMillis(); // start time
         int maxSize = 0;
 
-        for (FutureTask<Integer> task : threadList) {
+        for (Future<Integer> task : threadList) {
             int res = task.get();
 
             if (maxSize < res) {
@@ -74,5 +71,6 @@ public class Main {
         long endTs = System.currentTimeMillis(); // end time
 
         System.out.println("Time: " + (endTs - startTs) + "ms");
+        threadPool.shutdown();
     }
 }
